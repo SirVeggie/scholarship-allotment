@@ -52,10 +52,6 @@ namespace TuitionWaiverDistribution.Algorithms {
                 matrix[weight, 0] = new(0, null, new(-1, -1));
             }
 
-            //for (int item = 0; item < Items.Count + 1; item++) {
-                //matrix[0, item] = new(0, null, new(-1, -1));
-            //}
-
             return matrix;
         }
 
