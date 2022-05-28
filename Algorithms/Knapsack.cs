@@ -13,12 +13,12 @@ namespace TuitionWaiverDistribution.Algorithms {
             return new KnapsackNormal<T>(items, weight).SetDebug(debug).Solve();
         }
 
-        //public static List<List<SackItem<T>>> Solve<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
-            //return new KnapsackStack<T>(items, weight).SetDebug(debug).Solve();
-        //}
-
         public static List<SackItem<T>> Solve<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
             return new KnapsackChoice<T>(items, weight).SetDebug(debug).Solve();
+        }
+
+        public static List<SackItem2D<T>> Solve<T>(List<List<SackItem2D<T>>> items, int weightX, int weightY, bool debug = false) {
+            return new Knapsack2D<T>(items, weightX, weightY).SetDebug(debug).Solve();
         }
     }
 
@@ -101,6 +101,7 @@ namespace TuitionWaiverDistribution.Algorithms {
                 step = Matrix[step.Origin.Item1, step.Origin.Item2];
             }
 
+            result.Reverse();
             return result;
         }
 
@@ -114,7 +115,7 @@ namespace TuitionWaiverDistribution.Algorithms {
                 Console.Write($"{itemIndex}".PadRight(10, ' '));
                 for (int weight = 0; weight < WeightLimit + 1; weight++) {
                     var item = Matrix[weight, itemIndex];
-                    Console.Write($"{item.Value}{(item.AddedItem != null ? $"|{item.Origin.Item1}-{item.Origin.Item2}" : "")}".PadRight(10, ' '));
+                    Console.Write($"{item.Value}{(item.AddedItem != null ? $"|{weight-item.Origin.Item1}" : "")}".PadRight(10, ' '));
                 }
                 Console.WriteLine();
             }
