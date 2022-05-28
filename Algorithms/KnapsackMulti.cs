@@ -7,31 +7,15 @@ using TuitionWaiverDistribution.DataTypes;
 
 namespace TuitionWaiverDistribution.Algorithms {
 
-    public static class Knapsack {
-
-        public static List<SackItem<T>> Solve<T>(List<SackItem<T>> items, int weight, bool debug = false) {
-            return new KnapsackNormal<T>(items, weight).SetDebug(debug).Solve();
-        }
-
-        //public static List<List<SackItem<T>>> Solve<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
-            //return new KnapsackStack<T>(items, weight).SetDebug(debug).Solve();
-        //}
-
-        public static List<SackItem<T>> Solve<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
-            return new KnapsackChoice<T>(items, weight).SetDebug(debug).Solve();
-        }
-    }
-
-    public class KnapsackNormal<T> {
+    public class KnapsackChoice<T> {
 
         private bool debug;
 
-        public List<SackItem<T>> Items { get; }
+        public List<List<SackItem<T>>> Items { get; }
         public KnapsackStep<T>[,] Matrix { get; }
         public int WeightLimit { get; }
-        public Func<int, int, (int, int), bool>? CancelInclude { get; set; }
 
-        public KnapsackNormal(List<SackItem<T>> items, int weightLimit) {
+        public KnapsackChoice(List<List<SackItem<T>>> items, int weightLimit) {
             Items = items;
             WeightLimit = weightLimit;
             Matrix = Initialize();
@@ -44,7 +28,7 @@ namespace TuitionWaiverDistribution.Algorithms {
             return RetrieveItems();
         }
 
-        public KnapsackNormal<T> SetDebug(bool state) {
+        public KnapsackChoice<T> SetDebug(bool state) {
             debug = state;
             return this;
         }
@@ -75,15 +59,26 @@ namespace TuitionWaiverDistribution.Algorithms {
         }
 
         private KnapsackStep<T> IncludeItem(int index, int weight) {
-            SackItem<T> item = Items[index - 1];
-            (int, int) position = new(weight - item.Weight, index - 1);
+            List<SackItem<T>> choices = Items[index - 1];
+            KnapsackStep<T> result = new(0, null, new(-1, -1));
+            double bestValue = 0;
 
-            if (item.Weight > weight)
-                return new(0, null, new(-1, -1));
-            if (CancelInclude?.Invoke(index, weight, position) ?? false)
-                return new(0, null, new(-1, -1));
-            KnapsackStep<T> prev = Matrix[position.Item1, position.Item2];
-            return new(item.Value + prev.Value, item, position);
+            for (int i = 0; i < choices.Count; i++) {
+                SackItem<T> item = choices[i];
+                (int, int) position = new(weight - item.Weight, index - 1);
+
+                if (item.Weight > weight)
+                    continue;
+                KnapsackStep<T> prev = Matrix[position.Item1, position.Item2];
+                double value = item.Value + prev.Value;
+
+                if (value > bestValue) {
+                    bestValue = value;
+                    result = new(item.Value + prev.Value, item, position);
+                }
+            }
+
+            return result;
         }
 
         private KnapsackStep<T> ExcludeItem(int index, int weight) {
