@@ -11,24 +11,26 @@ namespace TuitionWaiverDistribution.Algorithms {
         private bool debug;
         private State state;
 
-        public List<SackItem<T>> Items { get; }
-        public List<Dictionary<int, KnapsackStep<T>>> Memory { get; }
-        public Stack<(int, int)> Stack { get; }
-        public int WeightLimit { get; }
+        public List<SackItem2D<T>> Items { get; }
+        public List<Dictionary<int, Dictionary<int, KnapsackStep2D<T>>>> Memory { get; }
+        public Stack<(int, int, int)> Stack { get; }
+        public int WeightLimitX { get; }
+        public int WeightLimitY { get; }
 
-        public KnapsackBranch2D(List<SackItem<T>> items, int weightLimit) {
+        public KnapsackBranch2D(List<SackItem2D<T>> items, int weightLimitX, int weightLimitY) {
             state = new(this);
 
             Items = items;
-            WeightLimit = weightLimit;
+            WeightLimitX = weightLimitX;
+            WeightLimitY = weightLimitY;
             Memory = new();
             for (int i = 0; i < items.Count; i++)
                 Memory.Add(new());
             Stack = new();
-            Stack.Push((items.Count - 1, weightLimit));
+            Stack.Push((items.Count - 1, weightLimitX, weightLimitY));
         }
 
-        public List<SackItem<T>> Solve() {
+        public List<SackItem2D<T>> Solve() {
             while (Stack.Count != 0) {
                 state.Update();
 
@@ -45,9 +47,9 @@ namespace TuitionWaiverDistribution.Algorithms {
         private bool HandleLeaf() {
             if (state.Depth == 0) {
                 if (state.ChildItem != null)
-                    Assign(state.Item.Value, (-1, -1), state.Item);
+                    Assign(state.Item.Value, (-1, -1, -1), state.Item);
                 else
-                    Assign(0, (-1, -1));
+                    Assign(0, (-1, -1, -1));
                 Stack.Pop();
                 return true;
             }
@@ -77,9 +79,9 @@ namespace TuitionWaiverDistribution.Algorithms {
             Stack.Pop();
         }
 
-        private List<SackItem<T>> RetrieveItems() {
-            List<SackItem<T>> result = new();
-            KnapsackStep<T> step = Recall((Items.Count - 1, WeightLimit))!;
+        private List<SackItem2D<T>> RetrieveItems() {
+            List<SackItem2D<T>> result = new();
+            KnapsackStep2D<T> step = Recall((Items.Count - 1, WeightLimitX, WeightLimitY))!;
             while (step != null) {
                 if (step.AddedItem != null)
                     result.Add(step.AddedItem);
@@ -90,22 +92,23 @@ namespace TuitionWaiverDistribution.Algorithms {
             return result;
         }
 
-        private KnapsackStep<T>? Recall((int, int)? position) {
+        private KnapsackStep2D<T>? Recall((int, int, int)? position) {
             if (position == null)
                 return null;
-            (int, int) pos = ((int, int))position;
-            if (pos.Item1 < 0 || pos.Item2 < 0)
+            if (position.Value.Item1 < 0 || position.Value.Item2 < 0)
                 return null;
-            if (Memory[pos.Item1].ContainsKey(pos.Item2))
-                return Memory[pos.Item1][pos.Item2];
+            if (Memory[position.Value.Item1].ContainsKey(position.Value.Item2))
+                return Memory[position.Value.Item1][position.Value.Item2][position.Value.Item3];
             return null;
         }
 
-        private void Assign(double value, (int, int)? origin, SackItem<T>? item = null) {
+        private void Assign(double value, (int, int, int)? origin, SackItem2D<T>? item = null) {
             if (origin == null)
                 throw new ArgumentNullException(nameof(origin));
-            KnapsackStep<T> step = new(value, item, ((int, int))origin);
-            Memory[state.Current.Item1].Add(state.Current.Item2, step);
+            KnapsackStep2D<T> step = new(value, item, origin.Value);
+            if (!Memory[state.Current.Item1].ContainsKey(state.Current.Item2))
+                Memory[state.Current.Item1].Add(state.Current.Item2, new());
+            Memory[state.Current.Item1][state.Current.Item2].Add(state.Current.Item3, step);
         }
 
         public KnapsackBranch2D<T> SetDebug(bool state) {
@@ -116,13 +119,14 @@ namespace TuitionWaiverDistribution.Algorithms {
         private class State {
             public KnapsackBranch2D<T> Parent { get; }
             public int Depth { get; private set; }
-            public int Weight { get; private set; }
-            public SackItem<T> Item { get; private set; }
-            public (int, int) Current { get; private set; }
-            public (int, int)? ChildItem { get; private set; }
-            public (int, int)? ChildEmpty { get; private set; }
-            public KnapsackStep<T>? MemoryItem { get; private set; }
-            public KnapsackStep<T>? MemoryEmpty { get; private set; }
+            public int WeightX { get; private set; }
+            public int WeightY { get; private set; }
+            public SackItem2D<T> Item { get; private set; }
+            public (int, int, int) Current { get; private set; }
+            public (int, int, int)? ChildItem { get; private set; }
+            public (int, int, int)? ChildEmpty { get; private set; }
+            public KnapsackStep2D<T>? MemoryItem { get; private set; }
+            public KnapsackStep2D<T>? MemoryEmpty { get; private set; }
 
             public State(KnapsackBranch2D<T> parent) {
                 Parent = parent;
@@ -131,10 +135,11 @@ namespace TuitionWaiverDistribution.Algorithms {
             public void Update() {
                 Current = Parent.Stack.Peek();
                 Depth = Current.Item1;
-                Weight = Current.Item2;
+                WeightX = Current.Item2;
+                WeightY = Current.Item3;
                 Item = Parent.Items[Depth];
-                ChildItem = Item.Weight <= Weight ? (Depth - 1, Weight - Item.Weight) : null;
-                ChildEmpty = Depth > 0 ? (Depth - 1, Weight) : null;
+                ChildItem = Item.WeightX <= WeightX && Item.WeightY <= WeightY ? (Depth - 1, WeightX - Item.WeightX, WeightY - Item.WeightY) : null;
+                ChildEmpty = Depth > 0 ? (Depth - 1, WeightX, WeightY) : null;
                 MemoryItem = Parent.Recall(ChildItem);
                 MemoryEmpty = Parent.Recall(ChildEmpty);
             }

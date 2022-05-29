@@ -13,6 +13,7 @@ CompareKnapsack(students);
 //CompareHalf(students);
 //CompareHalfBrute(students);
 //CompareKnapsackChoiceHalf(students);
+//CompareKnapsack2D(students);
 //CompareKnapsackAdvanced(students);
 CompareKnapsackBackward(students);
 //TestKnapsack();
@@ -193,7 +194,7 @@ static void CompareKnapsackBackward(List<Student> students) {
         items.Add(new(s.HighScore - s.LowScore, 1, $"{s.Name}"));
     }
 
-    var result = Knapsack.SolveBackwards(items, students.Count / 2, true);
+    var result = Knapsack.SolveBranch(items, students.Count / 2, true);
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
