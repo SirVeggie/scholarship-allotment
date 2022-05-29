@@ -95,10 +95,11 @@ namespace TuitionWaiverDistribution.Algorithms {
         private KnapsackStep2D<T>? Recall((int, int, int)? position) {
             if (position == null)
                 return null;
-            if (position.Value.Item1 < 0 || position.Value.Item2 < 0)
+            if (position.Value.Item1 < 0 || position.Value.Item2 < 0 || position.Value.Item3 < 0)
                 return null;
             if (Memory[position.Value.Item1].ContainsKey(position.Value.Item2))
-                return Memory[position.Value.Item1][position.Value.Item2][position.Value.Item3];
+                if (Memory[position.Value.Item1][position.Value.Item2].ContainsKey(position.Value.Item3))
+                    return Memory[position.Value.Item1][position.Value.Item2][position.Value.Item3];
             return null;
         }
 

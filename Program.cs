@@ -2,20 +2,21 @@
 using TuitionWaiverDistribution.Algorithms;
 using TuitionWaiverDistribution.DataTypes;
 
-List<Student> students = GenerateData(5);
+List<Student> students = GenerateData(10);
 
 //Console.WriteLine(string.Join(", ", students));
 //Console.WriteLine();
 
 //CompareBasic(students);
-CompareKnapsack(students);
+//CompareKnapsack(students);
 //CompareKnapsackChoice(students);
 //CompareHalf(students);
 //CompareHalfBrute(students);
 //CompareKnapsackChoiceHalf(students);
-//CompareKnapsack2D(students);
 //CompareKnapsackAdvanced(students);
-CompareKnapsackBackward(students);
+//CompareKnapsackBranch(students);
+CompareKnapsack2D(students);
+CompareKnapsackBranch2D(students);
 //TestKnapsack();
 
 
@@ -105,14 +106,19 @@ static void CompareKnapsack2D(List<Student> students) {
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
         items.Add(new() {
-            new(s.LowScore, 0, 1, (0, s)),
-            new(s.MidScore, 1, 1, (1, s)),
+            new(s.LowScore, 0, 1, (0, s))
+            //new(s.MidScore, 1, 1, (1, s)),
+            //new(s.HighScore, 2, 1, (2, s))
+        });
+        items.Add(new() {
+            //new(s.LowScore, 0, 1, (0, s)),
+            //new(s.MidScore, 1, 1, (1, s)),
             new(s.HighScore, 2, 1, (2, s))
         });
     }
 
-    int waivers = 10;
-    int acceptedStudents = 15;
+    int waivers = 5;
+    int acceptedStudents = 5;
     var result = Knapsack.Solve(items, waivers, acceptedStudents, false);
 
     double totalPercentage = 0;
@@ -185,7 +191,7 @@ static void CompareKnapsackAdvanced(List<Student> students) {
     Console.WriteLine();
 }
 
-static void CompareKnapsackBackward(List<Student> students) {
+static void CompareKnapsackBranch(List<Student> students) {
     List<SackItem<string>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
@@ -198,6 +204,41 @@ static void CompareKnapsackBackward(List<Student> students) {
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    Console.WriteLine();
+}
+
+static void CompareKnapsackBranch2D(List<Student> students) {
+    List<SackItem2D<(int, Student)>> items = new();
+
+    for (int i = 0; i < students.Count; i++) {
+        var s = students[i];
+        items.Add(new(s.LowScore, 0, 1, (0, s)));
+        //items.Add(new(s.MidScore, 1, 1, (1, s)));
+        items.Add(new(s.HighScore, 2, 1, (2, s)));
+    }
+
+    int waivers = 5;
+    int acceptedStudents = 5;
+    var result = Knapsack.SolveBranch(items, waivers, acceptedStudents, false);
+
+    double totalPercentage = 0;
+    foreach (var item in result) {
+        if (item.Relation.Item1 == 0) {
+            totalPercentage += item.Relation.Item2.PLow;
+        } else if (item.Relation.Item1 == 1) {
+            totalPercentage += item.Relation.Item2.PMid;
+        } else {
+            totalPercentage += item.Relation.Item2.PHigh;
+        }
+    }
+
+    Console.WriteLine($"Students: {students.Count}");
+    Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
+    Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
+    Console.WriteLine($"Weight Y: {result.Sum(x => x.WeightY)}");
+    Console.WriteLine($"Expected number of students: {totalPercentage}");
+    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    //CompareKnapsackChoiceHalf(students.Where(x => result.Any(y => y.Relation.Item2.Name == x.Name)).ToList());
     Console.WriteLine();
 }
 
