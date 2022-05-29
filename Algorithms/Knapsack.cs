@@ -28,6 +28,10 @@ namespace TuitionWaiverDistribution.Algorithms {
         public static List<SackItem2D<T>> SolveBranch<T>(List<SackItem2D<T>> items, int weightX, int weightY, bool debug = false) {
             return new KnapsackBranch2D<T>(items, weightX, weightY).SetDebug(debug).Solve();
         }
+
+        public static List<SackItem2D<T>> SolveBranch<T>(List<List<SackItem2D<T>>> items, int weightX, int weightY, bool debug = false) {
+            return new KnapsackBranch2DX<T>(items, weightX, weightY).SetDebug(debug).Solve();
+        }
     }
 
     public class KnapsackNormal<T> {

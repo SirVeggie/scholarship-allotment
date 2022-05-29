@@ -1,8 +1,9 @@
-﻿using TuitionWaiverDistribution;
+﻿using System.Diagnostics;
+using TuitionWaiverDistribution;
 using TuitionWaiverDistribution.Algorithms;
 using TuitionWaiverDistribution.DataTypes;
 
-List<Student> students = GenerateData(10);
+List<Student> students = GenerateData(200);
 
 //Console.WriteLine(string.Join(", ", students));
 //Console.WriteLine();
@@ -13,10 +14,11 @@ List<Student> students = GenerateData(10);
 //CompareHalf(students);
 //CompareHalfBrute(students);
 //CompareKnapsackChoiceHalf(students);
+CompareKnapsackBranch2DX(students);
 //CompareKnapsackAdvanced(students);
 //CompareKnapsackBranch(students);
-CompareKnapsack2D(students);
-CompareKnapsackBranch2D(students);
+//CompareKnapsackBranch2D(students);
+//CompareKnapsack2D(students);
 //TestKnapsack();
 
 
@@ -106,19 +108,19 @@ static void CompareKnapsack2D(List<Student> students) {
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
         items.Add(new() {
-            new(s.LowScore, 0, 1, (0, s))
+            new(s.LowScore, 0, 1000, (0, s))
             //new(s.MidScore, 1, 1, (1, s)),
             //new(s.HighScore, 2, 1, (2, s))
         });
         items.Add(new() {
             //new(s.LowScore, 0, 1, (0, s)),
             //new(s.MidScore, 1, 1, (1, s)),
-            new(s.HighScore, 2, 1, (2, s))
+            new(s.HighScore, 2, 1000, (2, s))
         });
     }
 
-    int waivers = 5;
-    int acceptedStudents = 5;
+    int waivers = 50;
+    int acceptedStudents = 50000;
     var result = Knapsack.Solve(items, waivers, acceptedStudents, false);
 
     double totalPercentage = 0;
@@ -143,9 +145,10 @@ static void CompareKnapsack2D(List<Student> students) {
 }
 
 static void CompareKnapsackAdvanced(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<List<SackItem2D<(int, Student)>>> items = new();
 
-    int accuracy = 7;
+    int accuracy = 10;
 
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
@@ -159,6 +162,7 @@ static void CompareKnapsackAdvanced(List<Student> students) {
     int studentTarget = 40;
     int waiverTarget = 40;
     var result = Knapsack.Solve(items, studentTarget * accuracy, waiverTarget * accuracy, false);
+    watch.Stop();
 
     double totalPercentage = 0;
     foreach (var item in result) {
@@ -186,6 +190,73 @@ static void CompareKnapsackAdvanced(List<Student> students) {
     Console.WriteLine($"Weight Y: {result.Sum(x => x.WeightY)}");
     Console.WriteLine($"Expected number of students: {totalPercentage}");
     Console.WriteLine($"Expected number of waivers: {totalWaiver}");
+    Console.WriteLine($"Elapsed time: {watch.Elapsed}");
+    Console.WriteLine($"{string.Join(", ", result.Select(x => (x.Relation.Item1, x.Relation.Item2.Name)))}");
+    //CompareKnapsackChoiceHalf(students.Where(x => result.Any(y => y.Relation.Item2.Name == x.Name)).ToList());
+    Console.WriteLine();
+}
+
+static void CompareKnapsackBranch2DX(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
+    List<List<SackItem2D<(int, Student)>>> items = new();
+
+    //int accuracy = 10;
+
+    //for (int i = 0; i < students.Count; i++) {
+    //    var s = students[i];
+    //    items.Add(new() {
+    //        new(s.LowScore, (int) Math.Round(s.PLow * accuracy), (int) Math.Round(s.PLow * 0), (0, s)),
+    //        new(s.MidScore, (int) Math.Round(s.PMid * accuracy), (int) Math.Round(s.PMid * accuracy), (1, s)),
+    //        new(s.HighScore, (int) Math.Round(s.PHigh * accuracy), (int) Math.Round(s.PHigh * accuracy * 2), (2, s))
+    //    });
+    //}
+
+    //int studentTarget = 40;
+    //int waiverTarget = 40;
+    //var result = Knapsack.SolveBranch(items, studentTarget * accuracy, waiverTarget * accuracy, false);
+    int accuracy = 100;
+
+    for (int i = 0; i < students.Count; i++) {
+        var s = students[i];
+        items.Add(new() {
+            new(s.LowScore, 0, (int) Math.Round(s.PLow * 0), (0, s)),
+            new(s.MidScore, 1, (int) Math.Round(s.PMid * accuracy), (1, s)),
+            new(s.HighScore, 2, (int) Math.Round(s.PHigh * accuracy * 2), (2, s))
+        });
+    }
+
+    int studentTarget = 50;
+    int waiverTarget = 40;
+    var result = Knapsack.SolveBranch(items, studentTarget, waiverTarget * accuracy, false);
+    watch.Stop();
+
+    double totalPercentage = 0;
+    foreach (var item in result) {
+        if (item.Relation.Item1 == 0) {
+            totalPercentage += item.Relation.Item2.PLow;
+        } else if (item.Relation.Item1 == 1) {
+            totalPercentage += item.Relation.Item2.PMid;
+        } else if (item.Relation.Item1 == 2) {
+            totalPercentage += item.Relation.Item2.PHigh;
+        }
+    }
+
+    double totalWaiver = 0;
+    foreach (var item in result) {
+        if (item.Relation.Item1 == 1) {
+            totalWaiver += item.Relation.Item2.PMid;
+        } else if (item.Relation.Item1 == 2) {
+            totalWaiver += item.Relation.Item2.PHigh * 2;
+        }
+    }
+
+    Console.WriteLine($"Students: {students.Count}");
+    Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
+    Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
+    Console.WriteLine($"Weight Y: {result.Sum(x => x.WeightY)}");
+    Console.WriteLine($"Expected number of students: {totalPercentage}");
+    Console.WriteLine($"Expected number of waivers: {totalWaiver}");
+    Console.WriteLine($"Elapsed time: {watch.Elapsed}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => (x.Relation.Item1, x.Relation.Item2.Name)))}");
     //CompareKnapsackChoiceHalf(students.Where(x => result.Any(y => y.Relation.Item2.Name == x.Name)).ToList());
     Console.WriteLine();
@@ -212,13 +283,13 @@ static void CompareKnapsackBranch2D(List<Student> students) {
 
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
-        items.Add(new(s.LowScore, 0, 1, (0, s)));
+        items.Add(new(s.LowScore, 0, 1000, (0, s)));
         //items.Add(new(s.MidScore, 1, 1, (1, s)));
-        items.Add(new(s.HighScore, 2, 1, (2, s)));
+        items.Add(new(s.HighScore, 2, 1000, (2, s)));
     }
 
-    int waivers = 5;
-    int acceptedStudents = 5;
+    int waivers = 50;
+    int acceptedStudents = 50000;
     var result = Knapsack.SolveBranch(items, waivers, acceptedStudents, false);
 
     double totalPercentage = 0;
