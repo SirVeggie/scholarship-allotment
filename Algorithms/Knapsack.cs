@@ -20,6 +20,10 @@ namespace TuitionWaiverDistribution.Algorithms {
         public static List<SackItem2D<T>> Solve<T>(List<List<SackItem2D<T>>> items, int weightX, int weightY, bool debug = false) {
             return new Knapsack2D<T>(items, weightX, weightY).SetDebug(debug).Solve();
         }
+
+        public static List<SackItem<T>> SolveBackwards<T>(List<SackItem<T>> items, int weight, bool debug = false) {
+            return new KnapsackBranch<T>(items, weight).SetDebug(debug).Solve();
+        }
     }
 
     public class KnapsackNormal<T> {
@@ -29,7 +33,6 @@ namespace TuitionWaiverDistribution.Algorithms {
         public List<SackItem<T>> Items { get; }
         public KnapsackStep<T>[,] Matrix { get; }
         public int WeightLimit { get; }
-        public Func<int, int, (int, int), bool>? CancelInclude { get; set; }
 
         public KnapsackNormal(List<SackItem<T>> items, int weightLimit) {
             Items = items;
@@ -79,8 +82,6 @@ namespace TuitionWaiverDistribution.Algorithms {
             (int, int) position = new(weight - item.Weight, index - 1);
 
             if (item.Weight > weight)
-                return new(0, null, new(-1, -1));
-            if (CancelInclude?.Invoke(index, weight, position) ?? false)
                 return new(0, null, new(-1, -1));
             KnapsackStep<T> prev = Matrix[position.Item1, position.Item2];
             return new(item.Value + prev.Value, item, position);
