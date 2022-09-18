@@ -3,18 +3,19 @@ using TuitionWaiverDistribution;
 using TuitionWaiverDistribution.Algorithms;
 using TuitionWaiverDistribution.DataTypes;
 
-List<Student> students = GenerateData(200);
+List<Student> students = GenerateData(10);
+Console.WriteLine("Solver launched");
 
 //Console.WriteLine(string.Join(", ", students));
 //Console.WriteLine();
 
 //CompareBasic(students);
-//CompareKnapsack(students);
-//CompareKnapsackChoice(students);
+CompareKnapsack(students);
+CompareKnapsackChoice(students);
 //CompareHalf(students);
 //CompareHalfBrute(students);
 //CompareKnapsackChoiceHalf(students);
-CompareKnapsackBranch2DX(students);
+//CompareKnapsackBranch2DX(students);
 //CompareKnapsackAdvanced(students);
 //CompareKnapsackBranch(students);
 //CompareKnapsackBranch2D(students);
