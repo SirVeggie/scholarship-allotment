@@ -11,6 +11,7 @@ Console.WriteLine("Solver launched");
 
 //CompareBasic(students);
 CompareKnapsack(students);
+CompareKnapsackNotDumb(students);
 CompareKnapsackChoice(students);
 //CompareHalf(students);
 //CompareHalfBrute(students);
@@ -35,15 +36,16 @@ static void TestKnapsack() {
 
 static void CompareKnapsack(List<Student> students) {
     List<SackItem<string>> items = new();
+    double initialSum = 0;
 
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
-        items.Add(new(s.LowScore, 0, $""));
+        initialSum += s.LowScore;
         items.Add(new(s.HighScore - s.LowScore, 1, $"{s.Name}"));
     }
 
     var result = Knapsack.Solve(items, students.Count / 2);
-    Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
+    Console.WriteLine($"Value: {result.Sum(x => x.Value) + initialSum}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
     Console.WriteLine();
@@ -360,12 +362,17 @@ static List<Student> GenerateData(int amount) {
     List<Student> data = new();
 
     for (int i = 1; i <= amount; i++) {
-        double low = 1, mid = 0, high = 0;
+        double low = random.NextDouble();
+        double high = random.NextDouble();
+        if (low > high) {
+            double temp = low;
+            low = high;
+            high = temp;
+        }
+        double mid = random.NextDouble() * (high - low) + low;
 
-        while (low > mid || mid > high) {
-            high = random.NextDouble();
-            mid = random.NextDouble();
-            low = random.NextDouble();
+        if (low > mid || mid > high || high > 1) {
+            throw new Exception("Badly generated probabilities");
         }
 
         data.Add(new() {
