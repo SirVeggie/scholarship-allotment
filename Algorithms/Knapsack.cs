@@ -116,15 +116,15 @@ namespace TuitionWaiverDistribution.Algorithms {
 
         public void PrintMatrix() {
             Console.Write("x".PadRight(10, ' '));
-            for (int i = 0; i < WeightLimit + 1; i++)
-                Console.Write($"{i}".PadRight(10, ' '));
+            for (int w = 0; w < WeightLimit + 1; w++)
+                Console.Write($"{w}".PadRight(10, ' '));
             Console.WriteLine();
 
             for (int itemIndex = 0; itemIndex < Items.Count + 1; itemIndex++) {
                 Console.Write($"{itemIndex}".PadRight(10, ' '));
                 for (int weight = 0; weight < WeightLimit + 1; weight++) {
                     var item = Matrix[weight, itemIndex];
-                    Console.Write($"{item.Value}{(item.AddedItem != null ? $"|{weight-item.Origin.Item1}" : "")}".PadRight(10, ' '));
+                    Console.Write($"{Math.Floor(item.Value)}{(item.AddedItem != null ? $"|{item.Origin.Item1}" : "")}".PadRight(10, ' '));
                 }
                 Console.WriteLine();
             }

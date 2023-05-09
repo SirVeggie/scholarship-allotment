@@ -11,11 +11,10 @@ Console.WriteLine("Solver launched");
 
 //CompareBasic(students);
 CompareKnapsack(students);
-CompareKnapsackNotDumb(students);
 CompareKnapsackChoice(students);
 //CompareHalf(students);
-//CompareHalfBrute(students);
-//CompareKnapsackChoiceHalf(students);
+CompareHalfBrute(students);
+CompareKnapsackChoiceHalf(students);
 //CompareKnapsackBranch2DX(students);
 //CompareKnapsackAdvanced(students);
 //CompareKnapsackBranch(students);
@@ -97,7 +96,7 @@ static void CompareKnapsackChoiceHalf(List<Student> students) {
         });
     }
 
-    var result = Knapsack.Solve(items, 20, false);
+    var result = Knapsack.Solve(items, students.Count, false);
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
