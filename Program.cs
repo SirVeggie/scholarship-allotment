@@ -3,24 +3,50 @@ using TuitionWaiverDistribution;
 using TuitionWaiverDistribution.Algorithms;
 using TuitionWaiverDistribution.DataTypes;
 
-List<Student> students = GenerateData(10);
+List<Student> students1 = GenerateData(10);
+List<Student> students2 = GenerateData(100);
+List<Student> students3 = GenerateData(1000);
+List<Student> students4 = GenerateData(10000);
 Console.WriteLine("Solver launched");
 
 //Console.WriteLine(string.Join(", ", students));
 //Console.WriteLine();
 
-//CompareBasic(students);
-CompareKnapsack(students);
-CompareKnapsackChoice(students);
-//CompareHalf(students);
-CompareHalfBrute(students);
-CompareKnapsackChoiceHalf(students);
-//CompareKnapsackBranch2DX(students);
-//CompareKnapsackAdvanced(students);
-//CompareKnapsackBranch(students);
-//CompareKnapsackBranch2D(students);
-//CompareKnapsack2D(students);
+//CompareBasic(students1);
+CompareKnapsack(students2);
+CompareKnapsackChoice(students2);
+CompareKnapsackBranch(students2);
+CompareKnapsack(students4);
+CompareKnapsackChoice(students4);
+CompareKnapsackBranch(students4);
+//CompareHalf(students1);
+//CompareHalfBrute(students1);
+//CompareKnapsackChoiceHalf(students1);
+//CompareKnapsackBranch2DX(students1);
+//CompareKnapsackAdvanced(students1);
+//CompareKnapsackBranch2D(students1);
+//CompareKnapsack2D(students1);
 //TestKnapsack();
+
+
+//static async long ExecuteTest(Action<List<Student>> f, List<Student> students, int timeout) {
+//    TaskCompletionSource<long> task = new();
+//    Thread t = new Thread(() => {
+//        Stopwatch timer = Stopwatch.StartNew();
+//        try {
+//            f(students);
+//            timer.Stop();
+//            task.TrySetResult(timer.ElapsedMilliseconds);
+//        } catch (ThreadAbortException) {
+//            task.TrySetResult(-1);
+//        }
+//    });
+
+//    Task res = await Task.WhenAny(task.Task, Task.Delay(timeout));
+//    if (t.IsAlive) {
+//        t.Abort();
+//    }
+//}
 
 
 static void TestKnapsack() {
@@ -34,6 +60,7 @@ static void TestKnapsack() {
 }
 
 static void CompareKnapsack(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<SackItem<string>> items = new();
     double initialSum = 0;
 
@@ -44,9 +71,12 @@ static void CompareKnapsack(List<Student> students) {
     }
 
     var result = Knapsack.Solve(items, students.Count / 2);
+    watch.Stop();
+
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value) + initialSum}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
-    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    //Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
     Console.WriteLine();
 }
 
@@ -67,6 +97,7 @@ static void CompareKnapsackChoiceBasic(List<Student> students) {
 }
 
 static void CompareKnapsackChoice(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<List<SackItem<string>>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
@@ -78,9 +109,12 @@ static void CompareKnapsackChoice(List<Student> students) {
     }
 
     var result = Knapsack.Solve(items, students.Count / 2);
+    watch.Stop();
+
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
-    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    //Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
     Console.WriteLine();
 }
 
@@ -265,6 +299,7 @@ static void CompareKnapsackBranch2DX(List<Student> students) {
 }
 
 static void CompareKnapsackBranch(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<SackItem<string>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
@@ -274,9 +309,12 @@ static void CompareKnapsackBranch(List<Student> students) {
     }
 
     var result = Knapsack.SolveBranch(items, students.Count / 2, true);
+    watch.Stop();
+
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
-    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    //Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
     Console.WriteLine();
 }
 
