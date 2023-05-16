@@ -1,30 +1,62 @@
-﻿using System.Diagnostics;
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Text;
 using TuitionWaiverDistribution;
 using TuitionWaiverDistribution.Algorithms;
 using TuitionWaiverDistribution.DataTypes;
 
-List<Student> students1 = GenerateData(10);
-List<Student> students2 = GenerateData(100);
-List<Student> students3 = GenerateData(1000);
-List<Student> students4 = GenerateData(10000);
-Console.WriteLine("Solver launched");
+string[] arguments = args ?? new string[0];
+
+if (arguments.Length == 1 && arguments[0].ToLower() == "test") {
+    await Testing.RunTestSuite();
+    return;
+}
+
+if (arguments.Length == 3) {
+    Variation variation = Enum.Parse<Variation>(arguments[0]);
+    Algo algo = Enum.Parse<Algo>(arguments[1]);
+    int students = int.Parse(arguments[2]);
+
+    Stopwatch watch = Stopwatch.StartNew();
+    double result = Testing.ExecuteTest(variation, algo, students);
+    watch.Stop();
+
+    //string output = JsonConvert.SerializeObject(new TestResult {
+        //success = result != 0,
+        //value = result,
+        //time = watch.ElapsedMilliseconds
+    //});
+
+    Console.WriteLine($" -> {result} | {watch.ElapsedMilliseconds} ms");
+
+    return;
+}
+
+List<Student> students1 = Testing.GenerateData(10);
+List<Student> students2 = Testing.GenerateData(100);
+List<Student> students3 = Testing.GenerateData(1000);
+List<Student> students4 = Testing.GenerateData(10000);
 
 //Console.WriteLine(string.Join(", ", students));
 //Console.WriteLine();
 
 //CompareBasic(students1);
-CompareKnapsack(students2);
-CompareKnapsackChoice(students2);
-CompareKnapsackBranch(students2);
+CompareKnapsack(students1);
+CompareKnapsack(students3);
+CompareKnapsack(students3);
+CompareKnapsack(students1);
 CompareKnapsack(students4);
-CompareKnapsackChoice(students4);
-CompareKnapsackBranch(students4);
-//CompareHalf(students1);
+CompareKnapsackStatic(students4, 50);
+//CompareKnapsackChoice(students4);
+//CompareKnapsackBranch(students4);
+//CompareHalf(students2);
 //CompareHalfBrute(students1);
-//CompareKnapsackChoiceHalf(students1);
-//CompareKnapsackBranch2DX(students1);
+//CompareKnapsackChoiceHalf(students2);
+//CompareKnapsackBranch2DX(students2);
 //CompareKnapsackAdvanced(students1);
-//CompareKnapsackBranch2D(students1);
+CompareKnapsackBranch2D(students1);
+CompareKnapsackBranch2D(students2);
+CompareKnapsackBranch2D(students3);
 //CompareKnapsack2D(students1);
 //TestKnapsack();
 
@@ -73,6 +105,7 @@ static void CompareKnapsack(List<Student> students) {
     var result = Knapsack.Solve(items, students.Count / 2);
     watch.Stop();
 
+    Console.WriteLine("Basic knapsack");
     Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value) + initialSum}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
@@ -80,21 +113,48 @@ static void CompareKnapsack(List<Student> students) {
     Console.WriteLine();
 }
 
-static void CompareKnapsackChoiceBasic(List<Student> students) {
-    List<List<SackItem<string>>> items = new();
+static void CompareKnapsackStatic(List<Student> students, int count) {
+    Stopwatch watch = Stopwatch.StartNew();
+    List<SackItem<string>> items = new();
+    double initialSum = 0;
 
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
-        items.Add(new() { new(s.LowScore, 0, "") });
-        items.Add(new() { new(s.HighScore - s.LowScore, 1, $"{s.Name}") });
+        initialSum += s.LowScore;
+        items.Add(new(s.HighScore - s.LowScore, 1, $"{s.Name}"));
     }
 
-    var result = Knapsack.Solve(items, students.Count / 2);
-    Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
+    var result = Knapsack.Solve(items, count);
+    watch.Stop();
+
+    Console.WriteLine("Basic knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
+    Console.WriteLine($"Value: {result.Sum(x => x.Value) + initialSum}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
-    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+    //Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
     Console.WriteLine();
 }
+
+//static void CompareKnapsackChoiceBasic(List<Student> students) {
+//    Stopwatch watch = Stopwatch.StartNew();
+//    List<List<SackItem<string>>> items = new();
+
+//    for (int i = 0; i < students.Count; i++) {
+//        var s = students[i];
+//        items.Add(new() { new(s.LowScore, 0, "") });
+//        items.Add(new() { new(s.HighScore - s.LowScore, 1, $"{s.Name}") });
+//    }
+
+//    var result = Knapsack.Solve(items, students.Count / 2);
+//    watch.Stop();
+
+//    Console.WriteLine("Choice knapsack");
+//    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
+//    Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
+//    Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
+//    Console.WriteLine($"{string.Join(", ", result.Select(x => x.Relation))}");
+//    Console.WriteLine();
+//}
 
 static void CompareKnapsackChoice(List<Student> students) {
     Stopwatch watch = Stopwatch.StartNew();
@@ -108,9 +168,10 @@ static void CompareKnapsackChoice(List<Student> students) {
         });
     }
 
-    var result = Knapsack.Solve(items, students.Count / 2);
+    var result = Knapsack.SolveChoice(items, students.Count / 2);
     watch.Stop();
 
+    Console.WriteLine("Choice knapsack");
     Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
@@ -119,6 +180,7 @@ static void CompareKnapsackChoice(List<Student> students) {
 }
 
 static void CompareKnapsackChoiceHalf(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<List<SackItem<string>>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
@@ -130,7 +192,11 @@ static void CompareKnapsackChoiceHalf(List<Student> students) {
         });
     }
 
-    var result = Knapsack.Solve(items, students.Count, false);
+    var result = Knapsack.SolveChoice(items, students.Count, false);
+    watch.Stop();
+
+    Console.WriteLine("Half choice knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
@@ -139,6 +205,7 @@ static void CompareKnapsackChoiceHalf(List<Student> students) {
 }
 
 static void CompareKnapsack2D(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<List<SackItem2D<(int, Student)>>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
@@ -158,6 +225,7 @@ static void CompareKnapsack2D(List<Student> students) {
     int waivers = 50;
     int acceptedStudents = 50000;
     var result = Knapsack.Solve(items, waivers, acceptedStudents, false);
+    watch.Stop();
 
     double totalPercentage = 0;
     foreach (var item in result) {
@@ -170,6 +238,8 @@ static void CompareKnapsack2D(List<Student> students) {
         }
     }
 
+    Console.WriteLine("2D knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
@@ -220,13 +290,14 @@ static void CompareKnapsackAdvanced(List<Student> students) {
         }
     }
 
+    Console.WriteLine("Advanced knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
     Console.WriteLine($"Weight Y: {result.Sum(x => x.WeightY)}");
     Console.WriteLine($"Expected number of students: {totalPercentage}");
     Console.WriteLine($"Expected number of waivers: {totalWaiver}");
-    Console.WriteLine($"Elapsed time: {watch.Elapsed}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => (x.Relation.Item1, x.Relation.Item2.Name)))}");
     //CompareKnapsackChoiceHalf(students.Where(x => result.Any(y => y.Relation.Item2.Name == x.Name)).ToList());
     Console.WriteLine();
@@ -286,13 +357,14 @@ static void CompareKnapsackBranch2DX(List<Student> students) {
         }
     }
 
+    Console.WriteLine("2DX knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
     Console.WriteLine($"Weight Y: {result.Sum(x => x.WeightY)}");
     Console.WriteLine($"Expected number of students: {totalPercentage}");
     Console.WriteLine($"Expected number of waivers: {totalWaiver}");
-    Console.WriteLine($"Elapsed time: {watch.Elapsed}");
     Console.WriteLine($"{string.Join(", ", result.Select(x => (x.Relation.Item1, x.Relation.Item2.Name)))}");
     //CompareKnapsackChoiceHalf(students.Where(x => result.Any(y => y.Relation.Item2.Name == x.Name)).ToList());
     Console.WriteLine();
@@ -311,6 +383,7 @@ static void CompareKnapsackBranch(List<Student> students) {
     var result = Knapsack.SolveBranch(items, students.Count / 2, true);
     watch.Stop();
 
+    Console.WriteLine("Branch knapsack");
     Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight: {result.Sum(x => x.Weight)}");
@@ -319,18 +392,20 @@ static void CompareKnapsackBranch(List<Student> students) {
 }
 
 static void CompareKnapsackBranch2D(List<Student> students) {
+    Stopwatch watch = Stopwatch.StartNew();
     List<SackItem2D<(int, Student)>> items = new();
 
     for (int i = 0; i < students.Count; i++) {
         var s = students[i];
         items.Add(new(s.LowScore, 0, 1000, (0, s)));
-        //items.Add(new(s.MidScore, 1, 1, (1, s)));
+        items.Add(new(s.MidScore, 1, 1, (1, s)));
         items.Add(new(s.HighScore, 2, 1000, (2, s)));
     }
 
     int waivers = 50;
     int acceptedStudents = 50000;
     var result = Knapsack.SolveBranch(items, waivers, acceptedStudents, false);
+    watch.Stop();
 
     double totalPercentage = 0;
     foreach (var item in result) {
@@ -343,6 +418,8 @@ static void CompareKnapsackBranch2D(List<Student> students) {
         }
     }
 
+    Console.WriteLine("Branch 2D knapsack");
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine($"Students: {students.Count}");
     Console.WriteLine($"Value: {result.Sum(x => x.Value)}");
     Console.WriteLine($"Weight X: {result.Sum(x => x.WeightX)}");
@@ -366,12 +443,15 @@ static void CompareBasic(List<Student> students) {
 
 static void CompareHalf(List<Student> students) {
     var median = BasicDistribution.Median(students);
+    Stopwatch watch = Stopwatch.StartNew();
     var smart = HalfDistribution.Smart(students);
+    watch.Stop();
 
     Console.WriteLine("Median: " + median.Total());
     Console.WriteLine(median.AllNames);
     Console.WriteLine();
 
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine("Smart:  " + smart.Total());
     Console.WriteLine(smart.AllNames);
     Console.WriteLine();
@@ -379,47 +459,20 @@ static void CompareHalf(List<Student> students) {
 
 static void CompareHalfBrute(List<Student> students) {
     var smart = HalfDistribution.Smart(students);
+    Stopwatch watch = Stopwatch.StartNew();
     var brute = HalfDistribution.Brute(students);
+    watch.Stop();
+
     var median = BasicDistribution.Median(students);
 
     Console.WriteLine("Smart:  " + smart.Total());
     Console.WriteLine(smart.AllNames);
     Console.WriteLine();
+    Console.WriteLine($"Time: {watch.ElapsedMilliseconds}");
     Console.WriteLine("Brute:  " + brute.Total());
     Console.WriteLine(brute.AllNames);
     Console.WriteLine();
     Console.WriteLine("Median: " + median.Total());
     Console.WriteLine(median.AllNames);
     Console.WriteLine();
-}
-
-
-static List<Student> GenerateData(int amount) {
-    Random random = new Random();
-    List<Student> data = new();
-
-    for (int i = 1; i <= amount; i++) {
-        double low = random.NextDouble();
-        double high = random.NextDouble();
-        if (low > high) {
-            double temp = low;
-            low = high;
-            high = temp;
-        }
-        double mid = random.NextDouble() * (high - low) + low;
-
-        if (low > mid || mid > high || high > 1) {
-            throw new Exception("Badly generated probabilities");
-        }
-
-        data.Add(new() {
-            Name = $"s{i}",
-            Score = random.Next(1, 101),
-            PHigh = high,
-            PMid = mid,
-            PLow = low,
-        });
-    }
-
-    return data;
 }

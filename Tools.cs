@@ -50,9 +50,9 @@ namespace TuitionWaiverDistribution {
                 result.Add((bool[])perm.Clone());
             }
 
-            Console.WriteLine($"{result.Count}");
+            //Console.WriteLine($"{result.Count}");
             result = RemoveDuplicates(result);
-            Console.WriteLine($"{result.Count}");
+            //Console.WriteLine($"{result.Count}");
             return result;
         }
 

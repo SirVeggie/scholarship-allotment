@@ -35,7 +35,7 @@ namespace TuitionWaiverDistribution.Algorithms {
             bool[] res = new bool[list.Count];
             var indexed = list.Select((x, i) => new { i, item = x });
             var perms = Tools.BoolPermutations(list.Count / 2, list.Count);
-            Console.WriteLine("perm done");
+            //Console.WriteLine("perm done");
 
             foreach (var mask in perms) {
                 double total = indexed.Aggregate(0.0, (total, x) => total + x.item.Score * (mask[x.i] ? x.item.PHigh : x.item.PLow));

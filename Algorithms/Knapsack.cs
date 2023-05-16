@@ -13,7 +13,7 @@ namespace TuitionWaiverDistribution.Algorithms {
             return new KnapsackNormal<T>(items, weight).SetDebug(debug).Solve();
         }
 
-        public static List<SackItem<T>> Solve<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
+        public static List<SackItem<T>> SolveChoice<T>(List<List<SackItem<T>>> items, int weight, bool debug = false) {
             return new KnapsackChoice<T>(items, weight).SetDebug(debug).Solve();
         }
 
