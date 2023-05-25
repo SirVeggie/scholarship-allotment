@@ -15,6 +15,8 @@ namespace TuitionWaiverDistribution.DataTypes {
         public string NoneNames => $"{string.Join(", ", None.Select(x => x.Name))}";
         public string AllNames => $"Full: {FullNames}\nHalf: {HalfNames}\nNone: {NoneNames}";
 
+        public int Count => Full.Count + Half.Count + None.Count;
+
         public Result(List<Student> full, List<Student> half, List<Student> none) {
             Full = full ?? new();
             Half = half ?? new();
@@ -31,10 +33,18 @@ namespace TuitionWaiverDistribution.DataTypes {
 
         public double Total() {
             double total = 0;
-            total += Full.Aggregate(0.0, (t, x) => t + x.Score * x.PHigh);
-            total += Half.Aggregate(0.0, (t, x) => t + x.Score * x.PMid);
-            total += None.Aggregate(0.0, (t, x) => t + x.Score * x.PLow);
+            total += Full.Aggregate(0.0, (t, x) => t + x.HighScore);
+            total += Half.Aggregate(0.0, (t, x) => t + x.MidScore);
+            total += None.Aggregate(0.0, (t, x) => t + x.LowScore);
             return total;
+        }
+
+        public double AverageScore() {
+            double total = 0;
+            total += Full.Sum(x => x.Score);
+            total += Half.Sum(x => x.Score);
+            total += None.Sum(x => x.Score);
+            return total / Count;
         }
     }
 }

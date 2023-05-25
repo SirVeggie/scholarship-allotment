@@ -133,6 +133,7 @@ namespace TuitionWaiverDistribution.Algorithms {
                 Depth = Current.Item1;
                 Weight = Current.Item2;
                 Item = Parent.Items[Depth];
+
                 ChildItem = Item.Weight <= Weight ? (Depth - 1, Weight - Item.Weight) : null;
                 ChildEmpty = Depth > 0 ? (Depth - 1, Weight) : null;
                 MemoryItem = Parent.Recall(ChildItem);

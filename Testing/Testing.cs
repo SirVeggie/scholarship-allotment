@@ -13,9 +13,10 @@ namespace TuitionWaiverDistribution {
 
         public static Dictionary<Variation, List<Algo>> Valids { get; set; } = new() {
             { Variation.Full, new() { Algo.Brute, Algo.Sort, Algo.Median, Algo.Knapsack, Algo.BranchKnapsack, Algo.ChoiceKnapsack } },
-            { Variation.Half, new() { Algo.Brute, Algo.ChoiceKnapsack } },
-            { Variation.StudentAdjustment, new() { Algo.Knapsack2D, Algo.BranchKnapsack2D } },
-            { Variation.WaiverAdjustment, new() { Algo.Knapsack2D, Algo.BranchKnapsack2D } }
+            { Variation.Reject, new() { Algo.Sort, Algo.Knapsack } },
+            { Variation.Split, new() { Algo.Brute, Algo.ChoiceKnapsack } },
+            { Variation.Approximate, new() { Algo.Knapsack2D, Algo.BranchKnapsack2D } },
+            { Variation.DoubleApproximate, new() { Algo.Knapsack2D, Algo.BranchKnapsack2D } }
         };
 
         public static async Task RunTestSuite() {
@@ -28,11 +29,11 @@ namespace TuitionWaiverDistribution {
 
                     foreach (int amount in new int[] { 10, 100, 1000, 10000 }) {
                         Console.Write($"        dataset {amount}");
-                        bool result = await CallTest(variation, algo, amount, 10000);
-                        if (!result) {
-                            Console.WriteLine(" -> timed out");
-                            break;
-                        }
+                        //bool result = await CallTest(variation, algo, amount, 10000);
+                        //if (!result) {
+                        //Console.WriteLine(" -> timed out");
+                        //break;
+                        //}
 
                         //Console.WriteLine($" -> value {result.value} in {result.time}");
                     }
@@ -40,10 +41,18 @@ namespace TuitionWaiverDistribution {
             }
         }
 
-        static async Task<bool> CallTest(Variation variation, Algo algo, int students, int timeout) {
+        public static async Task RunSingle() {
+            List<Student> students = GenerateData(10000);
+            string file = "test.json";
+            SaveData(file, students);
+            _ = CallTest(Variation.Full, Algo.Sort, file, 10000);
+            Console.WriteLine();
+        }
+
+        private static async Task<bool> CallTest(Variation variation, Algo algo, string studentFile, int timeout) {
             if (Environment.ProcessPath == null)
                 return false;
-            Process p = Start(Environment.ProcessPath, variation.ToString(), algo.ToString(), students.ToString());
+            Process p = Start(Environment.ProcessPath, variation.ToString(), algo.ToString(), studentFile);
             //StringBuilder sto = new();
             //p.OutputDataReceived += (o, e) => sto.AppendLine(e.Data);
 
@@ -60,49 +69,57 @@ namespace TuitionWaiverDistribution {
             return true;
         }
 
-        public static double ExecuteTest(Variation variation, Algo algo, int students) {
-            List<Student> studentList = GenerateData(students);
+        public static async Task ExecuteTest(Variation variation, Algo algo, string studentFile) {
+            List<Student> studentList = await LoadData(studentFile);
 
+            Stopwatch sw = Stopwatch.StartNew();
+            TestResult result = SelectAndRunImpl(studentList, variation, algo);
+            sw.Stop();
+
+            result.time = sw.ElapsedMilliseconds;
+
+            SaveResults(result);
+        }
+
+        public static TestResult SelectAndRunImpl(List<Student> students, Variation variation, Algo algo) {
             if (variation == Variation.Full) {
                 if (algo == Algo.Brute) {
-                    return AlgorithmImpl.SolveFullBrute(studentList);
+                    return AlgorithmImpl.SolveFullBrute(students);
                 } else if (algo == Algo.Sort) {
-                    return AlgorithmImpl.SolveFullSort(studentList);
+                    return AlgorithmImpl.SolveFullSort(students);
                 } else if (algo == Algo.Median) {
-                    return AlgorithmImpl.SolveFullMedian(studentList);
+                    return AlgorithmImpl.SolveFullMedian(students);
                 } else if (algo == Algo.Knapsack) {
-                    return AlgorithmImpl.SolveFullKnapsack(studentList);
+                    return AlgorithmImpl.SolveFullKnapsack(students);
                 } else if (algo == Algo.BranchKnapsack) {
-                    return AlgorithmImpl.SolveFullBranchKnapsack(studentList);
+                    return AlgorithmImpl.SolveFullBranchKnapsack(students);
                 } else if (algo == Algo.ChoiceKnapsack) {
-                    return AlgorithmImpl.SolveFullChoiceKnapsack(studentList);
-                } else {
-                    return 0;
+                    return AlgorithmImpl.SolveFullChoiceKnapsack(students);
                 }
 
-            } else if (variation == Variation.Half) {
+            } else if (variation == Variation.Split) {
                 if (algo == Algo.Brute) {
-                    return AlgorithmImpl.SolveHalfBrute(studentList);
+                    return AlgorithmImpl.SolveHalfBrute(students);
                 } else if (algo == Algo.ChoiceKnapsack) {
-                    return AlgorithmImpl.SolveHalfChoiceKnapsack(studentList);
+                    return AlgorithmImpl.SolveHalfChoiceKnapsack(students);
                 }
 
-            } else if (variation == Variation.StudentAdjustment) {
+            } else if (variation == Variation.Approximate) {
                 if (algo == Algo.Knapsack2D) {
-                    return AlgorithmImpl.SolveStudentKnapsack2D(studentList);
+                    return AlgorithmImpl.SolveStudentKnapsack2D(students);
                 } else if (algo == Algo.BranchKnapsack2D) {
-                    return AlgorithmImpl.SolveStudentBranchKnapsack2D(studentList);
+                    return AlgorithmImpl.SolveStudentBranchKnapsack2D(students);
                 }
 
-            } else if (variation == Variation.WaiverAdjustment) {
+            } else if (variation == Variation.DoubleApproximate) {
                 if (algo == Algo.Knapsack2D) {
-                    return AlgorithmImpl.SolveWaiverKnapsack2D(studentList);
+                    return AlgorithmImpl.SolveWaiverKnapsack2D(students);
                 } else if (algo == Algo.BranchKnapsack2D) {
-                    return AlgorithmImpl.SolveWaiverBranchKnapsack2D(studentList);
+                    return AlgorithmImpl.SolveWaiverBranchKnapsack2D(students);
                 }
             }
 
-            return 0;
+            return default;
         }
 
         public static List<Student> GenerateData(int amount) {
@@ -130,6 +147,115 @@ namespace TuitionWaiverDistribution {
                     PMid = mid,
                     PLow = low,
                 });
+            }
+
+            return data;
+        }
+
+        public static List<Student> GenerateDataApprox(int amount, bool tens) {
+            Random random = new Random();
+            List<Student> data = new();
+
+            for (int i = 1; i <= amount; i++) {
+                int low = random.Next(101);
+                int high = random.Next(101);
+                if (low > high) {
+                    int temp = low;
+                    low = high;
+                    high = temp;
+                }
+                int mid = (int)(random.NextDouble() * (high - low + 1) + low);
+
+                if (low > mid || mid > high || high > 100) {
+                    throw new Exception("Badly generated probabilities");
+                }
+
+                if (tens) {
+                    high = (int)Math.Round(high / 10.0) * 10;
+                    mid = (int)Math.Round(mid / 10.0) * 10;
+                    low = (int)Math.Round(low / 10.0) * 10;
+                }
+
+                data.Add(new() {
+                    Name = $"s{i}",
+                    Score = random.Next(1, 101),
+                    PHigh = high / 100,
+                    PMid = mid / 100,
+                    PLow = low / 100,
+                });
+            }
+
+            return data;
+        }
+
+        public static async void SaveData(string file, List<Student> students) {
+            string content = JsonConvert.SerializeObject(students, new JsonSerializerSettings {
+                TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented
+            });
+
+            using (StreamWriter w = new StreamWriter(file)) {
+                await w.WriteAsync(content);
+            }
+        }
+
+        public static async Task<List<Student>> LoadData(string file) {
+            string res;
+            using (StreamReader r = new StreamReader(file)) {
+                res = await r.ReadToEndAsync();
+            }
+
+            return JsonConvert.DeserializeObject<List<Student>>(res, new JsonSerializerSettings {
+                TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented
+            }) ?? new();
+        }
+
+        public static async void SaveResults(TestResult result) {
+            string content = JsonConvert.SerializeObject(result, new JsonSerializerSettings {
+                TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented
+            });
+
+            using (StreamWriter w = new StreamWriter("results.json")) {
+                await w.WriteAsync(content);
+            }
+        }
+
+        public static async Task<TestResult> LoadResults() {
+            string res;
+            using (StreamReader r = new StreamReader("results.json")) {
+                res = await r.ReadToEndAsync();
+            }
+
+            return JsonConvert.DeserializeObject<TestResult>(res, new JsonSerializerSettings {
+                TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented
+            });
+        }
+
+        public static List<Student> EdgeCase1(int amount) {
+            List<Student> data = new();
+
+            for (int i = 0; i < amount; i++) {
+                //if (i < amount / 2.0) {
+                if (i == 0) {
+                    data.Add(new() {
+                        Name = $"s{i}",
+                        Score = 100,
+                        PHigh = 0.5,
+                        PMid = 0.5,
+                        PLow = 0.5,
+                    });
+                } else {
+                    data.Add(new() {
+                        Name = $"s{i}",
+                        Score = 50,
+                        PHigh = 0.1,
+                        PMid = 0.1,
+                        PLow = 0.1,
+                    });
+                }
             }
 
             return data;
@@ -179,10 +305,10 @@ namespace TuitionWaiverDistribution {
 
     public enum Variation {
         Full,
-        Half,
-        //CustomRatio,
-        StudentAdjustment,
-        WaiverAdjustment
+        Split,
+        Reject,
+        Approximate,
+        DoubleApproximate
     }
 
     public enum Algo {

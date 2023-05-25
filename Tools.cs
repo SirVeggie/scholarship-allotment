@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -77,6 +78,38 @@ namespace TuitionWaiverDistribution {
             }
 
             return RemoveDuplicates(result);
+        }
+
+        public static List<int[]> Combinations5(int n, int[] bans) {
+            List<int[]> res = new();
+
+            for (int f1 = 0; f1 < n - 4; f1++) {
+                if (bans.Contains(f1))
+                    continue;
+                for (int f2 = f1 + 1; f2 < n - 3; f2++) {
+                    if (bans.Contains(f2))
+                        continue;
+                    for (int f3 = f2 + 1; f3 < n - 2; f3++) {
+                        if (bans.Contains(f3))
+                            continue;
+                        for (int f4 = f3 + 1; f4 < n - 1; f4++) {
+                            if (bans.Contains(f4))
+                                continue;
+                            for (int f5 = f4 + 1; f5 < n; f5++) {
+                                if (bans.Contains(f5))
+                                    continue;
+                                res.Add(new int[] { f1, f2, f3, f4, f5 });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        public static uint SetBit(uint value, int bit) {
+            return value | ((uint)1 << bit);
         }
 
         public static void PrintArray<T>(T[]? array) {

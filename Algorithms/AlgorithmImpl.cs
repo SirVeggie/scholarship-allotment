@@ -8,22 +8,25 @@ using TuitionWaiverDistribution.DataTypes;
 namespace TuitionWaiverDistribution.Algorithms {
     public static class AlgorithmImpl {
 
-        public static double SolveFullBrute(List<Student> items) {
+        public static TestResult SolveFullBrute(List<Student> items) {
             Result result = BasicDistribution.Brute(items);
-            return result.Total();
+            //return result.Total();
+            return default;
         }
 
-        public static double SolveFullSort(List<Student> items) {
+        public static TestResult SolveFullSort(List<Student> items) {
             Result result = BasicDistribution.Sorted(items);
-            return result.Total();
+            //return result.Total();
+            return default;
         }
 
-        public static double SolveFullMedian(List<Student> items) {
+        public static TestResult SolveFullMedian(List<Student> items) {
             Result result = BasicDistribution.Median(items);
-            return result.Total();
+            //return result.Total();
+            return default;
         }
 
-        public static double SolveFullKnapsack(List<Student> items) {
+        public static TestResult SolveFullKnapsack(List<Student> items) {
             List<SackItem<Student>> data = new();
             double initialSum = 0;
 
@@ -34,10 +37,11 @@ namespace TuitionWaiverDistribution.Algorithms {
             }
 
             var result = new KnapsackNormal<Student>(data, items.Count / 2).Solve();
-            return result.Sum(x => x.Value) + initialSum;
+            //return result.Sum(x => x.Value) + initialSum;
+            return default;
         }
 
-        public static double SolveFullChoiceKnapsack(List<Student> items) {
+        public static TestResult SolveFullChoiceKnapsack(List<Student> items) {
             List<List<SackItem<Student>>> data = new();
 
             for (int i = 0; i < items.Count; i++) {
@@ -49,10 +53,11 @@ namespace TuitionWaiverDistribution.Algorithms {
             }
 
             var result = new KnapsackChoice<Student>(data, items.Count / 2).Solve();
-            return result.Sum(x => x.Value);
+            //return result.Sum(x => x.Value);
+            return default;
         }
 
-        public static double SolveFullBranchKnapsack(List<Student> items) {
+        public static TestResult SolveFullBranchKnapsack(List<Student> items) {
             List<SackItem<Student>> data = new();
             double initialSum = 0;
 
@@ -63,15 +68,17 @@ namespace TuitionWaiverDistribution.Algorithms {
             }
 
             var result = new KnapsackBranch<Student>(data, items.Count / 2).Solve();
-            return result.Sum(x => x.Value) + initialSum;
+            //return result.Sum(x => x.Value) + initialSum;
+            return default;
         }
 
-        public static double SolveHalfBrute(List<Student> items) {
+        public static TestResult SolveHalfBrute(List<Student> items) {
             Result result = HalfDistribution.Brute(items);
-            return result.Total();
+            //return result.Total();
+            return default;
         }
 
-        public static double SolveHalfChoiceKnapsack(List<Student> items) {
+        public static TestResult SolveHalfChoiceKnapsack(List<Student> items) {
             List<List<SackItem<string>>> data = new();
 
             for (int i = 0; i < items.Count; i++) {
@@ -84,23 +91,24 @@ namespace TuitionWaiverDistribution.Algorithms {
             }
 
             var result = Knapsack.SolveChoice(data, items.Count, false);
-            return result.Sum(x => x.Value);
+            //return result.Sum(x => x.Value);
+            return default;
         }
 
-        public static double SolveStudentKnapsack2D(List<Student> items) {
-            return 0;
+        public static TestResult SolveStudentKnapsack2D(List<Student> items) {
+            return default;
         }
 
-        public static double SolveStudentBranchKnapsack2D(List<Student> items) {
-            return 0;
+        public static TestResult SolveStudentBranchKnapsack2D(List<Student> items) {
+            return default;
         }
 
-        public static double SolveWaiverKnapsack2D(List<Student> items) {
-            return 0;
+        public static TestResult SolveWaiverKnapsack2D(List<Student> items) {
+            return default;
         }
 
-        public static double SolveWaiverBranchKnapsack2D(List<Student> items) {
-            return 0;
+        public static TestResult SolveWaiverBranchKnapsack2D(List<Student> items) {
+            return default;
         }
     }
 }

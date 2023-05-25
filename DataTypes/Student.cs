@@ -19,6 +19,7 @@ namespace TuitionWaiverDistribution.DataTypes {
 
         public double Diff => Score * PHigh - Score * PLow;
         public double DiffMid => Score * PMid - Score * PLow;
+        public double DiffTop => Score * PHigh - Score * PMid;
         public double DiffMax => Math.Max(Diff, DiffMid * 2);
 
         public override string ToString() => $"{{{Name} | {Score} | {Math.Round(PLow, 2)}-{Math.Round(PMid, 2)}-{Math.Round(PHigh, 2)}}}";

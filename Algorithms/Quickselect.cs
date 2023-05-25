@@ -8,6 +8,7 @@ namespace TuitionWaiverDistribution.Algorithms {
     public static class Quickselect {
 
         public static T Run<T>(List<T> list, int k, Func<T, double> vFunc) {
+            list = new(list);
             int low = 0;
             int high = list.Count;
 
