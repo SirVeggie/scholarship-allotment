@@ -5,18 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace TuitionWaiverDistribution.DataTypes {
-    public struct KnapsackNode2D {
+    public struct KnapsackNodeChoice {
         public double value;
         public bool include;
         public int item;
 
-        public KnapsackNode2D(double value) {
+        public KnapsackNodeChoice(double value) {
             this.value = value;
             this.include = false;
             this.item = 0;
         }
 
-        public KnapsackNode2D(double value, int item) {
+        public KnapsackNodeChoice(double value, int item) {
             this.value = value;
             this.include = true;
             this.item = item;

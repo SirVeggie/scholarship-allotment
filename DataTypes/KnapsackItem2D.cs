@@ -17,5 +17,9 @@ namespace TuitionWaiverDistribution.DataTypes {
             this.weightX = weightX;
             this.weightY = weightY;
         }
+
+        public override string ToString() {
+            return $"{item} | {value} | {weightX} | {weightY}";
+        }
     }
 }

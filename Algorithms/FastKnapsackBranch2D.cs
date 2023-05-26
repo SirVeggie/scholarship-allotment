@@ -45,7 +45,7 @@ namespace TuitionWaiverDistribution.Algorithms {
 
             queue = null;
             tracked = null;
-            Dictionary<Position3D, KnapsackNode2D> M = new();
+            Dictionary<Position3D, KnapsackNodeChoice> M = new();
 
             while (backtrack.Count > 0) {
                 Position3D current = backtrack.Pop();

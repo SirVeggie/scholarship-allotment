@@ -30,20 +30,23 @@ namespace TuitionWaiverDistribution.Algorithms {
             return new(full, new(), none);
         }
 
-        public static Result Sorted(List<Student> list, int desiredAmount) {
-            List<Student> students = new(list);
-            bool odd = desiredAmount % 2 == 1;
+        public static Result BruteOld(List<Student> list) {
+            double best = 0;
+            bool[] res = new bool[list.Count];
+            var indexed = list.Select((x, i) => new { i, item = x });
+            var perms = Tools.BoolPermutations(list.Count / 2, list.Count);
+            //Console.WriteLine("perm done");
 
-            var lowSort = students.OrderByDescending(x => x.LowScore);
-            var temp = lowSort.Take(desiredAmount);
-            var tempSort = temp.OrderByDescending(x => x.Diff);
-            var full = tempSort.Take(desiredAmount / 2).ToList();
-            var none = tempSort.Skip(desiredAmount / 2).ToList();
-            //var sorted = students.OrderByDescending(x => x.Diff);
-            //var full = sorted.Take(desiredAmount / 2).ToList();
-            //var remaining = students.Where(x => !full.Contains(x)).ToList();
-            //var bottomSorted = remaining.OrderByDescending(x => x.LowScore);
-            //var none = bottomSorted.Take(desiredAmount / 2 + (odd ? 1 : 0)).ToList();
+            foreach (var mask in perms) {
+                double total = indexed.Aggregate(0.0, (total, x) => total + x.item.Score * (mask[x.i] ? x.item.PHigh : x.item.PLow));
+                if (total > best) {
+                    best = total;
+                    res = (bool[])mask.Clone();
+                }
+            }
+
+            var full = list.Where((x, i) => res[i]).ToList();
+            var none = list.Where((x, i) => !res[i]).ToList();
 
             return new(full, new(), none);
         }
@@ -52,7 +55,7 @@ namespace TuitionWaiverDistribution.Algorithms {
             double best = 0;
             int[] res = new int[list.Count / 2];
 
-            foreach (var perm in Tools.Combinations5(list.Count, new int[0])) {
+            foreach (var perm in Tools.Combinations(list.Count, list.Count / 2, new int[0])) {
                 double total = perm.Aggregate(0.0, (total, x) => total + list[x].Diff);
                 //total += list.Where((x, i) => !perm.Contains(i)).Aggregate(0.0, (total, x) => total + x.LowScore);
                 if (total > best) {
@@ -71,8 +74,10 @@ namespace TuitionWaiverDistribution.Algorithms {
             double best = 0;
             BruteContainer cont = new();
 
-            foreach (var outerPerm in Tools.Combinations5(list.Count, new int[0])) {
-                foreach (var innerPerm in Tools.Combinations5(list.Count, outerPerm)) {
+            int fAmount = desiredAmount / 2;
+
+            foreach (var outerPerm in Tools.Combinations(list.Count, fAmount, new int[0])) {
+                foreach (var innerPerm in Tools.Combinations(list.Count, desiredAmount - fAmount, outerPerm)) {
                     double full = outerPerm.Aggregate(0.0, (total, x) => total + list[x].Score * list[x].PHigh);
                     double none = innerPerm.Aggregate(0.0, (total, x) => total + list[x].Score * list[x].PLow);
                     double total = full + none;

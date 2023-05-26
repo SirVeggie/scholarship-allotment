@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using TuitionWaiverDistribution.DataTypes;
 
 namespace TuitionWaiverDistribution {
     public static class Tools {
@@ -80,6 +81,63 @@ namespace TuitionWaiverDistribution {
             return RemoveDuplicates(result);
         }
 
+        public static List<Trio> TrioPermutationsFast(int n) {
+            List<Trio> result = new();
+            bool odd = n % 2 == 1;
+
+            for (int i = 0; i <= n / 2; i++) {
+                int full = n / 2 - i;
+                int halves = i * 2 + (odd ? 1 : 0);
+
+                if (full == 0) {
+                    result.Add(new(new int[0], FullList(halves), new int[0]));
+                }
+
+                List<int[]> fullCombinations = Combinations(n, full);
+
+                foreach (var comb in fullCombinations) {
+                    List<int[]> halfCombinations = Combinations(n, halves, comb);
+                    foreach (var comb2 in halfCombinations) {
+                        int[] comb3 = new int[full];
+                        int p = 0;
+                        for (int k = 0; k < n; k++) {
+                            if (!comb.Contains(k) && !comb2.Contains(k)) {
+                                comb3[p] = k;
+                                p++;
+                            }
+                        }
+                        result.Add(new(comb, comb2, comb3));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public static int[] FullList(int n) {
+            int[] result = new int[n];
+            for (int i = 0; i < n; i++) {
+                result[i] = i;
+            }
+            return result;
+        }
+
+        public struct Trio {
+            public int[] fulls;
+            public int[] halves;
+            public int[] nones;
+
+            public Trio(int[] fulls, int[] halves, int[] nones) {
+                this.fulls = fulls;
+                this.halves = halves;
+                this.nones = nones;
+            }
+
+            public override string ToString() {
+                return $"({string.Join(",", fulls)}), ({string.Join(",", halves)}), ({string.Join(",", nones)})";
+            }
+        }
+
         public static List<int[]> Combinations5(int n, int[] bans) {
             List<int[]> res = new();
 
@@ -103,6 +161,62 @@ namespace TuitionWaiverDistribution {
                         }
                     }
                 }
+            }
+
+            return res;
+        }
+
+        public static List<int[]> Combinations(int n, int select, int[] bans = null) {
+            if (n <= 0 || select < 0)
+                throw new ArgumentOutOfRangeException(n < 0 ? nameof(n) : nameof(select));
+            if (select > n)
+                throw new ArgumentException($"{nameof(select)} cannot be higher than {nameof(n)}");
+            if (n == select)
+                return new() { FullList(n) };
+            if (select == 0)
+                return new() { Array.Empty<int>() };
+            if (bans == null)
+                bans = Array.Empty<int>();
+            List<int[]> res = new();
+            int[] pointers = new int[select];
+
+            for (int i = 0; i < select; i++) {
+                pointers[i] = i;
+            }
+
+            int p = 0;
+            while (true) {
+                if (bans.Contains(pointers[p])) {
+                    p = IncrementPointer(p);
+                    if (p == -1)
+                        break;
+                    continue;
+                }
+
+                if (p < select - 1) {
+                    p++;
+                    continue;
+                }
+
+                res.Add((int[])pointers.Clone());
+                p = IncrementPointer(p);
+                if (p == -1)
+                    break;
+            }
+
+            int IncrementPointer(int index) {
+                pointers[index] += 1;
+                if (pointers[index] >= n - (select - index - 1)) {
+                    if (index == 0)
+                        return -1;
+                    return IncrementPointer(index - 1);
+                }
+
+                for (int k = index + 1; k < select; k++) {
+                    pointers[k] = pointers[k - 1] + 1;
+                }
+
+                return index;
             }
 
             return res;
@@ -140,6 +254,31 @@ namespace TuitionWaiverDistribution {
                 values[pos1] = values[pos2];
                 values[pos2] = tmp;
             }
+        }
+
+        public static TestResult GetTestResult(Result result) {
+            return new TestResult {
+                success = true,
+                value = result.Total(),
+                expectedStudents = result.Full.Sum(x => x.PHigh) + result.Half.Sum(x => x.PMid) + result.None.Sum(x => x.PLow),
+                expectedScholarships = result.Full.Sum(x => x.PHigh) + result.Half.Sum(x => x.PMid/2),
+            };
+        }
+
+        public static TestResult GetTestResult(List<Student> result) {
+            return GetTestResult(new Result(
+                result,
+                new(),
+                result.Where(x => !result.Contains(x)).ToList()
+            ));
+        }
+
+        public static TestResult GetTestResult(KnapsackResult<(ScType, Student)> result) {
+            return GetTestResult(new Result(
+                result.Items.Where(x => x.item.Item1.IsFull()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsHalf()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsNone()).Select(x => x.item.Item2).ToList()
+            ));
         }
 
         public class Container<T> {

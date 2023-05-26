@@ -10,6 +10,7 @@ namespace TuitionWaiverDistribution.Algorithms {
 
     public static class FastKnapsackBranch<T> {
 
+        public static KnapsackResult<T> Solve(List<KnapsackItem<T>> items, int maxWeight) => Solve(items.ToArray(), maxWeight);
         public static KnapsackResult<T> Solve(KnapsackItem<T>[] items, int maxWeight) {
             Stopwatch sw = Stopwatch.StartNew();
             Queue<Position> queue = new();

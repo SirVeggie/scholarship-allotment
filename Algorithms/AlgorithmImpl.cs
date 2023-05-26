@@ -10,89 +10,74 @@ namespace TuitionWaiverDistribution.Algorithms {
 
         public static TestResult SolveFullBrute(List<Student> items) {
             Result result = BasicDistribution.Brute(items);
-            //return result.Total();
-            return default;
+            return Tools.GetTestResult(result);
         }
 
         public static TestResult SolveFullSort(List<Student> items) {
             Result result = BasicDistribution.Sorted(items);
-            //return result.Total();
-            return default;
+            return Tools.GetTestResult(result);
         }
 
         public static TestResult SolveFullMedian(List<Student> items) {
             Result result = BasicDistribution.Median(items);
-            //return result.Total();
-            return default;
+            return Tools.GetTestResult(result);
         }
 
         public static TestResult SolveFullKnapsack(List<Student> items) {
-            List<SackItem<Student>> data = new();
-            double initialSum = 0;
+            List<KnapsackItem<Student>> data = new();
 
             for (int i = 0; i < items.Count; i++) {
-                var s = items[i];
-                initialSum += s.LowScore;
-                data.Add(new(s.HighScore - s.LowScore, 1, s));
+                data.Add(new(items[i], items[i].Diff, 1));
             }
 
-            var result = new KnapsackNormal<Student>(data, items.Count / 2).Solve();
-            //return result.Sum(x => x.Value) + initialSum;
-            return default;
+            var result = FastKnapsack<Student>.Solve(data.ToArray(), items.Count / 2);
+            return Tools.GetTestResult(result.Items.Select(x => x.item).ToList());
         }
 
         public static TestResult SolveFullChoiceKnapsack(List<Student> items) {
-            List<List<SackItem<Student>>> data = new();
+            List<List<KnapsackItem<(ScType, Student)>>> data = new();
 
             for (int i = 0; i < items.Count; i++) {
-                var s = items[i];
-                List<SackItem<Student>> temp = new();
-                temp.Add(new(s.LowScore, 1, s));
-                temp.Add(new(s.HighScore, 1, s));
-                data.Add(temp);
-            }
-
-            var result = new KnapsackChoice<Student>(data, items.Count / 2).Solve();
-            //return result.Sum(x => x.Value);
-            return default;
-        }
-
-        public static TestResult SolveFullBranchKnapsack(List<Student> items) {
-            List<SackItem<Student>> data = new();
-            double initialSum = 0;
-
-            for (int i = 0; i < items.Count; i++) {
-                var s = items[i];
-                initialSum += s.LowScore;
-                data.Add(new(s.HighScore - s.LowScore, 1, s));
-            }
-
-            var result = new KnapsackBranch<Student>(data, items.Count / 2).Solve();
-            //return result.Sum(x => x.Value) + initialSum;
-            return default;
-        }
-
-        public static TestResult SolveHalfBrute(List<Student> items) {
-            Result result = HalfDistribution.Brute(items);
-            //return result.Total();
-            return default;
-        }
-
-        public static TestResult SolveHalfChoiceKnapsack(List<Student> items) {
-            List<List<SackItem<string>>> data = new();
-
-            for (int i = 0; i < items.Count; i++) {
-                var s = items[i];
                 data.Add(new() {
-                    new(s.LowScore, 0, ""),
-                    new(s.MidScore, 1, $"{s.Name}-h"),
-                    new(s.HighScore, 2, $"{s.Name}-F")
+                    new((ScType.Full, items[i]), items[i].HighScore, 2),
+                    //new((ScType.Half, items[i]), items[i].MidScore, 1),
+                    new((ScType.None, items[i]), items[i].LowScore, 0),
                 });
             }
 
-            var result = Knapsack.SolveChoice(data, items.Count, false);
-            //return result.Sum(x => x.Value);
-            return default;
+            var result = FastKnapsackChoice<(ScType, Student)>.Solve(data, items.Count / 2);
+            return Tools.GetTestResult(result);
+        }
+
+        public static TestResult SolveFullBranchKnapsack(List<Student> items) {
+            List<KnapsackItem<Student>> data = new();
+
+            for (int i = 0; i < items.Count; i++) {
+                data.Add(new(items[i], items[i].Diff, 1));
+            }
+
+            var result = FastKnapsackBranch<Student>.Solve(data.ToArray(), items.Count / 2);
+            return Tools.GetTestResult(result.Items.Select(x => x.item).ToList());
+        }
+
+        public static TestResult SolveHalfBrute(List<Student> items) {
+            Result result = HalfDistribution.BruteOld(items);
+            return Tools.GetTestResult(result);
+        }
+
+        public static TestResult SolveHalfChoiceKnapsack(List<Student> items) {
+            List<List<KnapsackItem<(ScType, Student)>>> data = new();
+
+            for (int i = 0; i < items.Count; i++) {
+                data.Add(new() {
+                    new((ScType.Full, items[i]), items[i].HighScore, 2),
+                    new((ScType.Half, items[i]), items[i].MidScore, 1),
+                    new((ScType.None, items[i]), items[i].LowScore, 0),
+                });
+            }
+
+            var result = FastKnapsackChoice<(ScType, Student)>.Solve(data, items.Count / 2);
+            return Tools.GetTestResult(result);
         }
 
         public static TestResult SolveStudentKnapsack2D(List<Student> items) {

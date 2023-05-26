@@ -8,7 +8,7 @@ using TuitionWaiverDistribution.DataTypes;
 namespace TuitionWaiverDistribution.Algorithms {
     public static class HalfDistribution {
 
-        public static Result Brute(List<Student> list) {
+        public static Result BruteOld(List<Student> list) {
             double best = 0;
             double[] res = new double[list.Count];
 
@@ -30,6 +30,27 @@ namespace TuitionWaiverDistribution.Algorithms {
             var none = list.Where((x, i) => res[i] == 0).ToList();
 
             return new(full, half, none);
+        }
+
+        public static Result Brute(List<Student> list) {
+            double best = 0;
+            Tools.Trio res = default;
+
+            foreach (var trio in Tools.TrioPermutationsFast(list.Count)) {
+                double total = trio.fulls.Sum(x => list[x].HighScore)
+                    + trio.halves.Sum(x => list[x].MidScore)
+                    + trio.nones.Sum(x => list[x].LowScore);
+
+                if (total > best) {
+                    best = total;
+                    res = trio;
+                }
+            }
+
+            return new(
+                res.fulls.Select(x => list[x]).ToList(),
+                res.halves.Select(x => list[x]).ToList(),
+                res.nones.Select(x => list[x]).ToList());
         }
     }
 }

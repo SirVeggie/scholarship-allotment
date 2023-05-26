@@ -300,13 +300,15 @@ namespace TuitionWaiverDistribution {
     public struct TestResult {
         public bool success;
         public double value;
+        public double expectedStudents;
+        public double expectedScholarships;
         public long time;
     }
 
     public enum Variation {
         Full,
-        Split,
         Reject,
+        Split,
         Approximate,
         DoubleApproximate
     }
