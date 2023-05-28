@@ -1,149 +1,103 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TuitionWaiverDistribution.DataTypes;
 
 namespace TuitionWaiverDistribution.Algorithms {
-    internal class KnapsackBranch2D<T> {
 
-        private bool debug;
-        private State state;
+    public static class KnapsackBranch2D<T> {
 
-        public List<SackItem2D<T>> Items { get; }
-        public List<Dictionary<int, Dictionary<int, KnapsackStep2D<T>>>> Memory { get; }
-        public Stack<(int, int, int)> Stack { get; }
-        public int WeightLimitX { get; }
-        public int WeightLimitY { get; }
-
-        public KnapsackBranch2D(List<SackItem2D<T>> items, int weightLimitX, int weightLimitY) {
-            state = new(this);
-
-            Items = items;
-            WeightLimitX = weightLimitX;
-            WeightLimitY = weightLimitY;
-            Memory = new();
-            for (int i = 0; i < items.Count; i++)
-                Memory.Add(new());
-            Stack = new();
-            Stack.Push((items.Count - 1, weightLimitX, weightLimitY));
+        public static KnapsackResult2D<T> Solve(List<List<KnapsackItem2D<T>>> items, int maxWeightX, int maxWeightY) {
+            return Solve(items.Select(x => x.ToArray()).ToArray(), maxWeightX, maxWeightY);
         }
+        public static KnapsackResult2D<T> Solve(KnapsackItem2D<T>[][] items, int maxWeightX, int maxWeightY) {
+            Queue<Position3D> queue = new();
+            Stack<Position3D> backtrack = new();
+            HashSet<Position3D> tracked = new();
 
-        public List<SackItem2D<T>> Solve() {
-            while (Stack.Count != 0) {
-                state.Update();
+            queue.Enqueue(new(items.Length, maxWeightX, maxWeightY));
+            backtrack.Push(new(items.Length, maxWeightX, maxWeightY));
 
-                if (HandleLeaf())
+            while (queue.Count > 0) {
+                Position3D current = queue.Dequeue();
+                int i = current.x, wx = current.y, wy = current.z;
+                if (i <= 1)
                     continue;
-                if (HandleBranching())
-                    continue;
-                HandleCombining();
+
+                Position3D exclude = new(i - 1, wx, wy);
+                if (!tracked.Contains(exclude)) {
+                    tracked.Add(exclude);
+                    queue.Enqueue(exclude);
+                    backtrack.Push(exclude);
+                }
+
+                foreach (var item in items[i - 1]) {
+                    if (item.weightX > wx || item.weightY > wy)
+                        continue;
+                    Position3D include = new(i - 1, wx - item.weightX, wy - item.weightY);
+                    if (!tracked.Contains(include)) {
+                        tracked.Add(include);
+                        queue.Enqueue(include);
+                        backtrack.Push(include);
+                    }
+                }
             }
 
-            return RetrieveItems();
-        }
+            queue = null;
+            tracked = null;
+            Dictionary<Position3D, KnapsackNodeChoice> M = new();
 
-        private bool HandleLeaf() {
-            if (state.Depth == 0) {
-                if (state.ChildItem != null)
-                    Assign(state.Item.Value, (-1, -1, -1), state.Item);
-                else
-                    Assign(0, (-1, -1, -1));
-                Stack.Pop();
-                return true;
+            while (backtrack.Count > 0) {
+                Position3D current = backtrack.Pop();
+                int i = current.x, wx = current.y, wy = current.z;
+
+                if (i == 1) {
+                    M.TryAdd(new(0, wx, wy), new());
+                    for (int k = 0; k < items[0].Length; k++) {
+                        M.TryAdd(new(0, wx - items[0][k].weightX, wy - items[0][k].weightY), new());
+                    }
+                }
+
+                bool wasIncluded = false;
+                for (int k = 0; k < items[i - 1].Length; k++) {
+                    if (items[i - 1][k].weightX <= wx && items[i - 1][k].weightY <= wy) {
+                        double addValue = items[i - 1][k].value + M[new(i - 1, wx - items[i - 1][k].weightX, wy - items[i - 1][k].weightY)].value;
+                        if (addValue > M[new(i - 1, wx, wy)].value) {
+                            if (wasIncluded && M[new(i, wx, wy)].value < addValue)
+                                M[new(i, wx, wy)] = new(addValue, k);
+                            else if (!wasIncluded)
+                                M.Add(new(i, wx, wy), new(addValue, k));
+                            wasIncluded = true;
+                        }
+                    }
+                }
+
+                if (!wasIncluded) {
+                    M.Add(new(i, wx, wy), new(M[new(i - 1, wx, wy)].value));
+                }
             }
 
-            return false;
-        }
+            List<KnapsackItem2D<T>> result = new(items.Length);
 
-        private bool HandleBranching() {
-            if (state.ChildItem != null && state.MemoryItem == null)
-                Stack.Push(state.ChildItem!.Value);
-            if (state.ChildEmpty != null && state.MemoryEmpty == null && state.ChildEmpty != state.ChildItem)
-                Stack.Push(state.ChildEmpty!.Value);
-            if (Stack.Peek() != state.Current)
-                return true;
-
-            return false;
-        }
-
-        private void HandleCombining() {
-            double itemValue = (state.MemoryItem?.Value ?? 0) + state.Item.Value;
-            double emptyValue = state.MemoryEmpty!.Value;
-
-            if (state.ChildItem != null && itemValue > emptyValue)
-                Assign(itemValue, state.ChildItem, state.Item);
-            else
-                Assign(emptyValue, state.ChildEmpty);
-            Stack.Pop();
-        }
-
-        private List<SackItem2D<T>> RetrieveItems() {
-            List<SackItem2D<T>> result = new();
-            KnapsackStep2D<T> step = Recall((Items.Count - 1, WeightLimitX, WeightLimitY))!;
-            while (step != null) {
-                if (step.AddedItem != null)
-                    result.Add(step.AddedItem);
-                step = Recall(step.Origin)!;
+            int weightX = maxWeightX, weightY = maxWeightY;
+            double totalValue = 0;
+            int totalWeightX = 0, totalWeightY = 0;
+            for (int i = items.Length; i > 0; i--) {
+                if (M[new(i, weightX, weightY)].include) {
+                    int item = M[new(i, weightX, weightY)].item;
+                    result.Add(items[i - 1][item]);
+                    weightX -= items[i - 1][item].weightX;
+                    weightY -= items[i - 1][item].weightY;
+                    totalValue += items[i - 1][item].value;
+                    totalWeightX += items[i - 1][item].weightX;
+                    totalWeightY += items[i - 1][item].weightY;
+                }
             }
 
-            result.Reverse();
-            return result;
-        }
-
-        private KnapsackStep2D<T>? Recall((int, int, int)? position) {
-            if (position == null)
-                return null;
-            if (position.Value.Item1 < 0 || position.Value.Item2 < 0 || position.Value.Item3 < 0)
-                return null;
-            if (Memory[position.Value.Item1].ContainsKey(position.Value.Item2))
-                if (Memory[position.Value.Item1][position.Value.Item2].ContainsKey(position.Value.Item3))
-                    return Memory[position.Value.Item1][position.Value.Item2][position.Value.Item3];
-            return null;
-        }
-
-        private void Assign(double value, (int, int, int)? origin, SackItem2D<T>? item = null) {
-            if (origin == null)
-                throw new ArgumentNullException(nameof(origin));
-            KnapsackStep2D<T> step = new(value, item, origin.Value);
-            if (!Memory[state.Current.Item1].ContainsKey(state.Current.Item2))
-                Memory[state.Current.Item1].Add(state.Current.Item2, new());
-            Memory[state.Current.Item1][state.Current.Item2].Add(state.Current.Item3, step);
-        }
-
-        public KnapsackBranch2D<T> SetDebug(bool state) {
-            debug = state;
-            return this;
-        }
-
-        private class State {
-            public KnapsackBranch2D<T> Parent { get; }
-            public int Depth { get; private set; }
-            public int WeightX { get; private set; }
-            public int WeightY { get; private set; }
-            public SackItem2D<T> Item { get; private set; }
-            public (int, int, int) Current { get; private set; }
-            public (int, int, int)? ChildItem { get; private set; }
-            public (int, int, int)? ChildEmpty { get; private set; }
-            public KnapsackStep2D<T>? MemoryItem { get; private set; }
-            public KnapsackStep2D<T>? MemoryEmpty { get; private set; }
-
-            public State(KnapsackBranch2D<T> parent) {
-                Parent = parent;
-            }
-
-            public void Update() {
-                Current = Parent.Stack.Peek();
-                Depth = Current.Item1;
-                WeightX = Current.Item2;
-                WeightY = Current.Item3;
-                Item = Parent.Items[Depth];
-                ChildItem = Item.WeightX <= WeightX && Item.WeightY <= WeightY ? (Depth - 1, WeightX - Item.WeightX, WeightY - Item.WeightY) : null;
-                ChildEmpty = Depth > 0 ? (Depth - 1, WeightX, WeightY) : null;
-                MemoryItem = Parent.Recall(ChildItem);
-                MemoryEmpty = Parent.Recall(ChildEmpty);
-            }
+            return new(totalValue, totalWeightX, totalWeightY, result);
         }
     }
 }

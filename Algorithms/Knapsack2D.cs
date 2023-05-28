@@ -6,125 +6,59 @@ using System.Threading.Tasks;
 using TuitionWaiverDistribution.DataTypes;
 
 namespace TuitionWaiverDistribution.Algorithms {
-    public class Knapsack2D<T> {
-        private bool debug;
 
-        public List<List<SackItem2D<T>>> Items { get; }
-        public KnapsackStep2D<T>[,,] Matrix { get; }
-        public int WeightLimitX { get; }
-        public int WeightLimitY { get; }
+    public static class Knapsack2D<T> {
 
-        public Knapsack2D(List<List<SackItem2D<T>>> items, int weightLimitX, int weightLimitY) {
-            Items = items;
-            WeightLimitX = weightLimitX;
-            WeightLimitY = weightLimitY;
-            Matrix = Initialize();
-        }
+        public static KnapsackResult2D<T> Solve(List<List<KnapsackItem2D<T>>> items, int maxWeightX, int maxWeightY) => Solve(items.Select(x => x.ToArray()).ToArray(), maxWeightX, maxWeightY);
+        public static KnapsackResult2D<T> Solve(KnapsackItem2D<T>[][] items, int maxWeightX, int maxWeightY) {
+            KnapsackNodeChoice[,,] M = new KnapsackNodeChoice[items.Length + 1, maxWeightX + 1, maxWeightY + 1];
 
-        public List<SackItem2D<T>> Solve() {
-            InternalSolve();
-            if (debug)
-                PrintMatrix();
-            return RetrieveItems();
-        }
+            for (int i = 0; i <= items.Length; i++) {
+                if (i == 0)
+                    continue;
 
-        public Knapsack2D<T> SetDebug(bool state) {
-            debug = state;
-            return this;
-        }
+                for (int wx = 0; wx <= maxWeightX; wx++) {
+                    for (int wy = 0; wy <= maxWeightY; wy++) {
 
-        private KnapsackStep2D<T>[,,] Initialize() {
-            KnapsackStep2D<T>[,,] matrix = new KnapsackStep2D<T>[WeightLimitX + 1, WeightLimitY + 1, Items.Count + 1];
+                        bool wasIncluded = false;
+                        for (int k = 0; k < items[i - 1].Length; k++) {
+                            if (items[i - 1][k].weightX <= wx && items[i - 1][k].weightY <= wy) {
+                                double addValue = items[i - 1][k].value + M[i - 1, wx - items[i - 1][k].weightX, wy - items[i - 1][k].weightY].value;
+                                if (addValue > M[i - 1, wx, wy].value) {
+                                    if (!wasIncluded || addValue > M[i, wx, wy].value)
+                                        M[i, wx, wy] = new(addValue, k);
+                                    wasIncluded = true;
+                                }
+                            }
+                        }
 
-            for (int weightX = 0; weightX < WeightLimitX + 1; weightX++) {
-                for (int weightY = 0; weightY < WeightLimitY + 1; weightY++) {
-                    matrix[weightX, weightY, 0] = new(0, null, new(-1, -1, -1));
-                }
-            }
-
-            return matrix;
-        }
-
-        private void InternalSolve() {
-            for (int itemIndex = 1; itemIndex < Items.Count + 1; itemIndex++) {
-                for (int weightX = 0; weightX < WeightLimitX + 1; weightX++) {
-                    for (int weightY = 0; weightY < WeightLimitY + 1; weightY++) {
-                        KnapsackStep2D<T> inc = IncludeItem(itemIndex, weightX, weightY);
-                        KnapsackStep2D<T> exc = ExcludeItem(itemIndex, weightX, weightY);
-
-                        if (exc.Value >= inc.Value) {
-                            Matrix[weightX, weightY, itemIndex] = exc;
-                        } else {
-                            Matrix[weightX, weightY, itemIndex] = inc;
+                        if (!wasIncluded) {
+                            M[i, wx, wy] = new(M[i - 1, wx, wy].value);
                         }
                     }
                 }
             }
-        }
 
-        private KnapsackStep2D<T> IncludeItem(int index, int weightX, int weightY) {
-            List<SackItem2D<T>> choices = Items[index - 1];
-            KnapsackStep2D<T> result = new(0, null, new(-1, -1, -1));
-            double bestValue = 0;
+            List<KnapsackItem2D<T>> result = new(items.Length);
 
-            for (int i = 0; i < choices.Count; i++) {
-                SackItem2D<T> item = choices[i];
-                (int, int, int) position = new(weightX - item.WeightX, weightY - item.WeightY, index - 1);
-
-                if (item.WeightX > weightX || item.WeightY > weightY)
-                    continue;
-                KnapsackStep2D<T> prev = Matrix[position.Item1, position.Item2, position.Item3];
-                double value = item.Value + prev.Value;
-
-                if (value > bestValue) {
-                    bestValue = value;
-                    result = new(item.Value + prev.Value, item, position);
+            int weightX = maxWeightX;
+            int weightY = maxWeightY;
+            double totalV = 0;
+            int totalWX = 0;
+            int totalWY = 0;
+            for (int i = items.Length; i > 0; i--) {
+                if (M[i, weightX, weightY].include) {
+                    KnapsackItem2D<T> item = items[i - 1][M[i, weightX, weightY].item];
+                    result.Add(item);
+                    weightX -= item.weightX;
+                    weightY -= item.weightY;
+                    totalV += item.value;
+                    totalWX += item.weightX;
+                    totalWY += item.weightY;
                 }
             }
 
-            return result;
-        }
-
-        private KnapsackStep2D<T> ExcludeItem(int index, int weightX, int weightY) {
-            double value = Matrix[weightX, weightY, index - 1].Value;
-            return new(value, null, new(weightX, weightY, index - 1));
-        }
-
-        private List<SackItem2D<T>> RetrieveItems() {
-            List<SackItem2D<T>> result = new();
-            KnapsackStep2D<T> step = Matrix[WeightLimitX, WeightLimitY, Items.Count];
-
-            while (step.Origin.Item1 != -1) {
-                if (step.AddedItem != null)
-                    result.Add(step.AddedItem);
-                step = Matrix[step.Origin.Item1, step.Origin.Item2, step.Origin.Item3];
-            }
-
-            result.Reverse();
-            return result;
-        }
-
-        public void PrintMatrix(bool all = false) {
-            Console.Write("x".PadRight(10, ' '));
-            for (int i = 0; i < WeightLimitX + 1; i++)
-                Console.Write($"{i}".PadRight(10, ' '));
-            Console.WriteLine();
-
-            for (int weightY = all ? 0 : WeightLimitY; weightY < WeightLimitY + 1; weightY++) {
-                if (all && weightY > 0)
-                    Console.WriteLine("\n");
-                for (int itemIndex = 0; itemIndex < Items.Count + 1; itemIndex++) {
-                    Console.Write($"{itemIndex}".PadRight(10, ' '));
-                    for (int weightX = 0; weightX < WeightLimitX + 1; weightX++) {
-                        var item = Matrix[weightX, weightY, itemIndex];
-                        if (item == null)
-                            Console.Write("null".PadRight(10, ' '));
-                        else
-                            Console.Write($"{item.Value.ToString().Split(',')[0]}{(item.AddedItem != null ? $"|{weightX - item.Origin.Item1}|{weightY - item.Origin.Item2}" : "")}".PadRight(10, ' '));
-                    }
-                    Console.WriteLine();
-                }
-            }
+            return new(totalV, totalWX, totalWY, result);
         }
     }
 }

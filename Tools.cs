@@ -261,16 +261,8 @@ namespace TuitionWaiverDistribution {
                 success = true,
                 value = result.Total(),
                 expectedStudents = result.Full.Sum(x => x.PHigh) + result.Half.Sum(x => x.PMid) + result.None.Sum(x => x.PLow),
-                expectedScholarships = result.Full.Sum(x => x.PHigh) + result.Half.Sum(x => x.PMid/2),
+                expectedScholarships = result.Full.Sum(x => x.PHigh) + result.Half.Sum(x => x.PMid / 2),
             };
-        }
-
-        public static TestResult GetTestResult(List<Student> result) {
-            return GetTestResult(new Result(
-                result,
-                new(),
-                result.Where(x => !result.Contains(x)).ToList()
-            ));
         }
 
         public static TestResult GetTestResult(KnapsackResult<(ScType, Student)> result) {
@@ -279,6 +271,21 @@ namespace TuitionWaiverDistribution {
                 result.Items.Where(x => x.item.Item1.IsHalf()).Select(x => x.item.Item2).ToList(),
                 result.Items.Where(x => x.item.Item1.IsNone()).Select(x => x.item.Item2).ToList()
             ));
+        }
+
+        public static TestResult GetTestResult(KnapsackResult2D<(ScType, Student)> result) {
+            return GetTestResult(new Result(
+                result.Items.Where(x => x.item.Item1.IsFull()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsHalf()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsNone()).Select(x => x.item.Item2).ToList()
+            ));
+        }
+
+        public static Result GetResult(KnapsackResult<(ScType, Student)> result) {
+            return new(
+                result.Items.Where(x => x.item.Item1.IsFull()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsHalf()).Select(x => x.item.Item2).ToList(),
+                result.Items.Where(x => x.item.Item1.IsNone()).Select(x => x.item.Item2).ToList());
         }
 
         public class Container<T> {
